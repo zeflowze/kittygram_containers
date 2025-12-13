@@ -1,0 +1,173 @@
+name: Kittygram CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  PYTHON_VERSION: "3.9"
+  NODE_VERSION: "18"
+
+jobs:
+  lint_backend:
+    name: Backend lint (PEP8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+      - name: Install lint tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8==6.1.0
+      - name: Run flake8
+        working-directory: backend
+        run: flake8 .
+
+  test_backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    needs: lint_backend
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_NAME: postgres
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          SECRET_KEY: test_secret
+          DEBUG: "False"
+          ALLOWED_HOSTS: "127.0.0.1,localhost"
+        run: pytest -q
+
+  test_frontend:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run tests
+        working-directory: frontend
+        run: npm test -- --watchAll=false
+
+  build_and_push:
+    name: Build and push Docker images
+    runs-on: ubuntu-latest
+    needs: [ test_backend, test_frontend ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_backend:latest
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_frontend:latest
+
+      - name: Build & push gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./nginx
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_gateway:latest
+
+  deploy_to_server:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose and env to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose.production.yml,.env"
+          target: "kittygram"
+
+      - name: Copy deploy script to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "infra/scripts/deploy.sh"
+          target: "kittygram/infra/scripts"
+
+      - name: Run deploy script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            chmod +x ~/kittygram/infra/scripts/deploy.sh
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            ~/kittygram/infra/scripts/deploy.sh
+
+  notify:
+    name: Telegram notification
+    runs-on: ubuntu-latest
+    needs: deploy_to_server
+    steps:
+      - name: Send Telegram message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "Kittygram: деплой завершён успешно."
