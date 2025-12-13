@@ -1,4 +1,5 @@
 repo_owner: zeflowze
-kittygram_domain: http://localhost:9000
-taski_domain: http://localhost
+kittygram_domain: https://kittygram.158.160.104.85.sslip.io
+taski_domain: https://taski.158.160.104.85.sslip.io
 dockerhub_username: madmaxchillguy
+
