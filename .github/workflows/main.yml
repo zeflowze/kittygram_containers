@@ -141,13 +141,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy compose and env to server
+      - name: Prepare directories on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p ~/kittygram/infra/scripts
+
+      - name: Copy compose to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "docker-compose.production.yml,.env"
+          source: "docker-compose.production.yml"
           target: "kittygram"
 
       - name: Copy deploy script to server
@@ -157,7 +166,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "infra/scripts/deploy.sh"
-          target: "kittygram/infra/scripts"
+          target: "kittygram/infra/scripts/"
 
       - name: Run deploy script
         uses: appleboy/ssh-action@v1.0.3
@@ -167,5 +176,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             chmod +x ~/kittygram/infra/scripts/deploy.sh
-            export DOCKERHUB_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            export DOCKERHUB_USERNAME='${{ secrets.DOCKER_USERNAME }}'
             ~/kittygram/infra/scripts/deploy.sh
+
