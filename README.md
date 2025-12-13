@@ -1,35 +1,51 @@
-# Kittygram — containers & CI/CD
+# Kittygram — контейнеризация и CI/CD
 
-This repository contains a Dockerized setup for Kittygram (Django + React + Nginx) and a GitHub Actions pipeline that:
-- lints backend code (PEP8),
-- runs backend and frontend tests,
-- builds and pushes Docker images to Docker Hub,
-- deploys to a remote server via Docker Compose,
-- sends a Telegram notification on success.
+Проект Kittygram развёрнут в Docker-контейнерах и автоматически
+тестируется и деплоится на удалённый сервер с помощью GitHub Actions.
 
-## Services
-- **db**: PostgreSQL 13 (volume: `pg_data`)
-- **backend**: Django API (volume: `static`, `media`)
-- **frontend**: React build copied into `static`
-- **gateway**: Nginx reverse-proxy, serves `/static/` and `/media/`
+В проекте реализованы:
+- контейнеризация backend, frontend, gateway и базы данных;
+- автоматическое тестирование бэкенда и фронтенда;
+- сборка и публикация Docker-образов в Docker Hub;
+- автоматический деплой на сервер при push в ветку `main`.
 
-## Quick start (local)
-1. Create `.env` from `.env.example`
-2. Run:
-   ```bash
-   docker compose up --build
-   ```
-3. Open: `http://localhost:9000`
+---
 
-## Production deploy
-On the server, the pipeline places files into `~/kittygram/` and runs:
-- migrations,
-- collectstatic,
-- container restart via Docker Compose.
+## Стек технологий
 
-Manual deploy (server):
+- Backend: Django, Django REST Framework
+- Frontend: React
+- Gateway: Nginx
+- Database: PostgreSQL 13
+- CI/CD: GitHub Actions
+- Контейнеризация: Docker, Docker Compose
+
+---
+
+## Архитектура контейнеров
+
+| Контейнер | Образ | Назначение |
+|---------|------|------------|
+| db | postgres:13 | База данных |
+| backend | kittygram_backend | API и бизнес-логика |
+| frontend | kittygram_frontend | Сборка фронтенда |
+| gateway | kittygram_gateway | Nginx, прокси и раздача статики |
+
+### Docker volumes
+- `pg_data` — данные PostgreSQL  
+- `static` — статические файлы backend и frontend  
+- `media` — пользовательские загружаемые файлы  
+
+---
+
+## Локальный запуск проекта
+
+1. Создайте файл `.env` на основе `.env.example`:
 ```bash
-cd ~/kittygram
-chmod +x infra/scripts/deploy.sh
-./infra/scripts/deploy.sh
-```
+cp .env.example .env
+
+2. Запустите контейнеры:
+docker compose up --build
+
+3. Проект будет доступен по адресу:
+http://localhost:9000
