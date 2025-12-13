@@ -1,5 +1,6 @@
 repo_owner: zeflowze
+dockerhub_username: madmaxchillguy
+
 kittygram_domain: https://kittygram.158.160.104.85.sslip.io
 taski_domain: https://taski.158.160.104.85.sslip.io
-dockerhub_username: madmaxchillguy
 
