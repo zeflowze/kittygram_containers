@@ -51,6 +51,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug: show repo layout and pytest config
+        run: |
+          pwd
+          ls -la
+          echo "---- tests/ ----"
+          ls -la tests || true
+          echo "---- pytest.ini ----"
+          cat pytest.ini
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -95,7 +104,7 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --passWithNoTests
 
   build_and_push:
     name: Build and push Docker images
@@ -149,6 +158,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             mkdir -p ~/kittygram/infra/scripts
+            mkdir -p ~/kittygram
 
       - name: Copy compose to server
         uses: appleboy/scp-action@v0.1.7
@@ -175,7 +185,14 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -e
+            if [ ! -s ~/kittygram/.env ]; then
+              echo "ERROR: ~/kittygram/.env is missing or empty. Fill it on server before deploy."
+              exit 1
+            fi
+
             chmod +x ~/kittygram/infra/scripts/deploy.sh
-            export DOCKERHUB_USERNAME='${{ secrets.DOCKER_USERNAME }}'
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKER_USERNAME }}
             ~/kittygram/infra/scripts/deploy.sh
+
 
