@@ -1,5 +1,9 @@
 # Kittygram — контейнеризация и CI/CD
 
+[![Kittygram CI/CD](https://github.com/zeflowze/kittygram_containers/actions/workflows/main.yml/badge.svg)](
+https://github.com/zeflowze/kittygram_containers/actions/workflows/main.yml
+)
+
 Проект Kittygram развёрнут в Docker-контейнерах и автоматически
 тестируется и деплоится на удалённый сервер с помощью GitHub Actions.
 
