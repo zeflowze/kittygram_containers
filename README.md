@@ -44,12 +44,72 @@ https://github.com/zeflowze/kittygram_containers/actions/workflows/main.yml
 
 ## Локальный запуск проекта
 
-1. Создайте файл `.env` на основе `.env.example`:
-```bash
-cp .env.example .env
 
-2. Запустите контейнеры:
-docker compose up --build
+1. Подготовка сервера 
 
-3. Проект будет доступен по адресу:
-http://localhost:9000
+Подключиться к серверу:
+
+ssh -i path/to/ssh_key ubuntu@<SERVER_IP>
+
+
+Обновить пакеты и установить Docker:
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable docker
+sudo systemctl start docker
+
+
+Добавить пользователя в группу Docker:
+
+sudo usermod -aG docker ubuntu
+exit
+
+2. Установка и настройка Nginx
+
+Установить Nginx:
+
+sudo apt install nginx -y
+sudo systemctl start nginx
+
+
+Разрешить трафик:
+
+sudo ufw allow 'Nginx Full'
+sudo ufw allow OpenSSH
+sudo ufw enable
+
+
+Создать конфигурацию Kittygram:
+
+sudo nano /etc/nginx/sites-available/kittygram
+
+
+Пример конфигурации:
+
+server {
+    server_name kittygram.<SERVER_IP>.sslip.io;
+
+    location / {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+
+Активировать конфиг:
+
+sudo ln -s /etc/nginx/sites-available/kittygram /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+3. Получение SSL-сертификата
+   
+sudo snap install core; sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+sudo certbot --nginx
+
+
+После этого проект доступен по HTTPS.
