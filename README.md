@@ -44,6 +44,23 @@ https://github.com/zeflowze/kittygram_containers/actions/workflows/main.yml
 
 ## Локальный запуск проекта
 
+Перед запуском необходимо создать файл .env в корне проекта
+
+Создание файла .env
+cp .env.example .env
+
+Пример содержимого .env
+# Django
+SECRET_KEY=django-insecure-change-me
+DEBUG=False
+ALLOWED_HOSTS=localhost,127.0.0.1,kittygram.<SERVER_IP>.sslip.io
+
+# Database (PostgreSQL)
+POSTGRES_DB=kittygram
+POSTGRES_USER=kittygram
+POSTGRES_PASSWORD=kittygram_pass
+DB_HOST=db
+DB_PORT=5432
 
 1. Подготовка сервера 
 
@@ -113,3 +130,7 @@ sudo certbot --nginx
 
 
 После этого проект доступен по HTTPS.
+
+### Автор проекта
+[lvndscvrs](https://github.com/lvndscvrs)  
+2025 | Учебный проект по контейнеризации
