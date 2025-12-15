@@ -170,12 +170,11 @@ jobs:
             chmod +x ~/kittygram/infra/scripts/deploy.sh
             export DOCKERHUB_USERNAME="${{ secrets.DOCKER_USERNAME }}"
             ~/kittygram/infra/scripts/deploy.sh
-
+            
   notify:
     name: Telegram notification
     runs-on: ubuntu-latest
     needs: deploy_to_server
-    if: github.ref == 'refs/heads/main'
     steps:
       - name: Send Telegram message
         uses: appleboy/telegram-action@master
