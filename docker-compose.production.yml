@@ -18,7 +18,7 @@ services:
       timeout: 3s
       retries: 10
     restart: always
-
+    
   backend:
     image: ${DOCKERHUB_USERNAME}/kittygram_backend:latest
     container_name: backend
@@ -28,8 +28,9 @@ services:
         condition: service_healthy
     volumes:
       - static:/static/
-      - media:/app/media/
+      - media:/media/
     restart: always
+
 
   frontend:
     image: ${DOCKERHUB_USERNAME}/kittygram_frontend:latest
