@@ -50,17 +50,31 @@ https://github.com/zeflowze/kittygram_containers/actions/workflows/main.yml
 cp .env.example .env
 
 Пример содержимого .env
-# Django
+
 SECRET_KEY=django-insecure-change-me
 DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1,kittygram.<SERVER_IP>.sslip.io
 
-# Database (PostgreSQL)
 POSTGRES_DB=kittygram
 POSTGRES_USER=kittygram
 POSTGRES_PASSWORD=kittygram_pass
 DB_HOST=db
 DB_PORT=5432
+
+Запуск проекта в контейнерах
+
+docker compose -f docker-compose.production.yml up -d
+
+После запуска будут подняты все сервисы:
+- база данных;
+- backend;
+- frontend (сборка);
+- gateway (Nginx).
+
+Применение миграций и сбор статики
+
+docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
 
 1. Подготовка сервера 
 
