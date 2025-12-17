@@ -1,7 +1,7 @@
 import React from "react";
 import { useHistory, NavLink } from "react-router-dom";
 
-import { registerUser } from "../../utils/api";
+import { registerUser, loginUser } from "../../utils/api";
 
 import logoIcon from "../../images/logo.svg";
 
@@ -51,24 +51,35 @@ export const SignUp = ({ extraClass = "" }) => {
     errorLogin && setErrorLogin("");
     errorPassword && setErrorPassword("");
 
-    checkValid() &&
-      registerUser(userData.username, userData.password)
-        .then((res) => {
-          if (res && res.username) {
-            history.replace({ pathname: "/signin" });
-          }
-        })
-        .catch((err) => {
-          if (typeof err.username === "object") {
-            setErrorLogin("Пользователь с таким именем уже зарегистрирован");
-          } else if (typeof err.password === "object") {
-            setErrorPassword(
-              "Пароль должен содержать минимум 8 символов и не состоять полностью из цифр"
-            );
-          } else {
-            setErrorDoublePassword("Ошибка сервера");
-          }
-        });
+    if (!checkValid()) return;
+
+    registerUser(userData.username, userData.password)
+      .then((res) => {
+        if (res && res.username) {
+          return loginUser(userData.username, userData.password);
+        }
+        return Promise.reject({ detail: "Registration failed" });
+      })
+      .then((data) => {
+        // loginUser сохранит токен в localStorage (auth_token/token)
+        if (data && data.auth_token) {
+          history.replace({ pathname: "/cats" });
+        } else {
+          // если по какой-то причине токен не пришёл
+          history.replace({ pathname: "/signin" });
+        }
+      })
+      .catch((err) => {
+        if (typeof err?.username === "object") {
+          setErrorLogin("Пользователь с таким именем уже зарегистрирован");
+        } else if (typeof err?.password === "object") {
+          setErrorPassword(
+            "Пароль должен содержать минимум 8 символов и не состоять полностью из цифр"
+          );
+        } else {
+          setErrorDoublePassword("Ошибка сервера");
+        }
+      });
   };
 
   return (
@@ -131,3 +142,4 @@ export const SignUp = ({ extraClass = "" }) => {
     </section>
   );
 };
+
