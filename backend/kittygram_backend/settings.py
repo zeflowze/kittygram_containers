@@ -21,7 +21,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', KEY) or sys.exit(
 
 
 # DEBUG
-DEBUG = on_or_off(os.getenv('TRIGGER'))
+DEBUG = on_or_off(os.getenv('DEBUG'))
+
 
 
 # ALLOWED_HOSTS
@@ -82,9 +83,18 @@ WSGI_APPLICATION = 'kittygram_backend.wsgi.application'
 
 
 # DATABASES
+name_database = os.getenv('NAME_DATABASE')
+if not name_database:
+    # Если Postgres-переменные есть — работаем с Postgres по умолчанию
+    if os.getenv('POSTGRES_DB') or os.getenv('DB_NAME'):
+        name_database = 'postgresql'
+    else:
+        name_database = 'default'
+
 DATABASES = {
-    'default': db(os.getenv('NAME_DATABASE'))
+    'default': db(name_database)
 }
+
 
 
 AUTH_PASSWORD_VALIDATORS = [
