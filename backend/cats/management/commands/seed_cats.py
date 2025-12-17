@@ -30,4 +30,3 @@ class Command(BaseCommand):
             Cat.objects.create(owner=user, **item)
 
         self.stdout.write(f"Seeded {len(SEED)} cats.")
-
