@@ -26,7 +26,7 @@ services:
         condition: service_healthy
     volumes:
       - static:/static/
-      - media:/app/media/
+      - media:/media/
     restart: always
 
   frontend:
